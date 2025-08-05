@@ -15,7 +15,7 @@ namespace MedalPeakPlugin;
 [BepInPlugin("cosmatic.MedalPeakPlugin", "MedalPeakPlugin", "1.0")]
 public class MedalPeakPlugin : BaseUnityPlugin
 {
-    internal static MedalPeakPlugin Instance { get; private set; }
+    internal static MedalPeakPlugin? Instance { get; private set; }
     internal Harmony? Harmony { get; set; }
     internal static ManualLogSource Log { get; private set; } = null!;
 
@@ -157,10 +157,10 @@ public class MedalPeakPlugin : BaseUnityPlugin
                     alertType = "Disabled"
                 }
             };
-            StringContent content = new StringContent(JsonConvert.SerializeObject((object)jsonPayload), Encoding.UTF8, "application/json");
-            HttpResponseMessage httpResponseMessage = await client.PostAsync("http://localhost:12665/api/v1/event/invoke", (HttpContent)content);
+            StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
+            HttpResponseMessage httpResponseMessage = await client.PostAsync("http://localhost:12665/api/v1/event/invoke", content);
             jsonPayload = null;
-            content = (StringContent)null;
+            content = null;
         }
     }
 
@@ -179,10 +179,10 @@ public class MedalPeakPlugin : BaseUnityPlugin
                 matchId = lobbyId,
                 otherPlayers = otherPlayers
             };
-            StringContent content = new StringContent(JsonConvert.SerializeObject((object)jsonPayload), Encoding.UTF8, "application/json");
-            HttpResponseMessage httpResponseMessage = await client.PostAsync("http://localhost:12665/api/v1/context/submit", (HttpContent)content);
+            StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
+            HttpResponseMessage httpResponseMessage = await client.PostAsync("http://localhost:12665/api/v1/context/submit", content);
             jsonPayload = null;
-            content = (StringContent)null;
+            content = null;
         }
     }
 }
