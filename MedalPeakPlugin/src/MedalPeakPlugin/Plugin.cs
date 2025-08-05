@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Newtonsoft.Json;
 using Steamworks;
+using Photon.Pun;
 
 #nullable enable
 namespace MedalPeakPlugin;
@@ -50,12 +51,38 @@ public class MedalPeakPlugin : BaseUnityPlugin
     {
     }
 
+    // get all players in a lobby when you join
+    [HarmonyPatch(typeof(SteamLobbyHandler), "OnLobbyEnter")]
+    public class LobbyEnterPatch
+    {
+        private static void Prefix(LobbyEnter_t param)
+        {
+            //IL_0000: Unknown result type (might be due to invalid IL or missing references)
+            if (param.m_EChatRoomEnterResponse == 2)
+            {
+                Debug.Log((object)"cant join this lobby");
+                return;
+            }
+
+            CSteamID lobbyID = new CSteamID(param.m_ulSteamIDLobby);
+            Debug.Log($"Joined lobby with ID: {lobbyID}");
+
+            int count = SteamMatchmaking.GetNumLobbyMembers(lobbyID);
+            for (int i = 0; i < count; i++)
+            {
+                CSteamID memberID = SteamMatchmaking.GetLobbyMemberByIndex(lobbyID, i);
+                string name = SteamFriends.GetFriendPersonaName(memberID);
+                Debug.Log($"Player {i}: {name} (id {memberID})");
+            }
+        }
+    }
+
     // handle player passing out, from any source
     [HarmonyPatch(typeof(Character), nameof(Character.RPCA_PassOut))]
     public static class CharacterPassOutPatch
     {
         [HarmonyPostfix]
-        private static async Task CharacterPassOutRPCAPostfix(Character __instance)
+        private static void CharacterPassOutRPCAPostfix(Character __instance)
         {
             if (__instance != Character.localCharacter) return;
 
@@ -66,12 +93,12 @@ public class MedalPeakPlugin : BaseUnityPlugin
             Debug.Log("Player passed out, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
             if (!fallCausedByScoutmaster)
             {
-                await SendEventAsync("1", "Player Passed Out", 30, 5000);
+                SendEventAsync("1", "Player Passed Out", 30, 5000);
             }
             else
             {
                 fallCausedByScoutmaster = false;
-                await SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
+                SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
             }
         }
     }
@@ -79,14 +106,14 @@ public class MedalPeakPlugin : BaseUnityPlugin
     // handle instant player death (ex from an item that kills you with no chance for revive)
     [HarmonyPatch(typeof(Character), "DieInstantly")]
     [HarmonyPostfix]
-    private static async Task DieInstantlyPostFix(CharacterMovement __instance)
+    private static void DieInstantlyPostFix(Character __instance)
     {
         Debug.Log("Player died instantly");
 
         var steamId = GetSteamId();
         var mapId = GetMapId();
         var mapSegment = GetMapSegment();
-        await SendEventAsync("2", "Player Died Instantly", 30, 10000);
+        SendEventAsync("2", "Player Died Instantly", 30, 10000);
     }
 
 
@@ -95,7 +122,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     class PlayerFallPatch
     {
         [HarmonyPostfix]
-        static async Task PlayerFallPostFix(Character __instance)
+        static void PlayerFallPostFix(Character __instance)
         {
             bool isOutOfStamina = __instance.data.currentStamina < 0.005f && __instance.data.extraStamina < 0.001f;
             bool noStaminaFall = isOutOfStamina && __instance.data.avarageVelocity.y < -9.0f;
@@ -139,11 +166,11 @@ public class MedalPeakPlugin : BaseUnityPlugin
 
                         if (!fallCausedByScoutmaster)
                         {
-                            await SendEventAsync("3", "Large Fall", 30, 5000);
+                            SendEventAsync("3", "Large Fall", 30, 5000);
                         }
                         else
                         {
-                            await SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
+                            SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
                         }
                     }
 
