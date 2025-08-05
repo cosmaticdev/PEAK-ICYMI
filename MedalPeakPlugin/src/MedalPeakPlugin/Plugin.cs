@@ -134,13 +134,29 @@ public class MedalPeakPlugin : BaseUnityPlugin
         private static bool isFalling = false;
     }
 
-    // player sees scoutmaster hunting
+    // player gets flung by scoutmaster
+    [HarmonyPatch(typeof(Scoutmaster), nameof(Scoutmaster.RPCA_Throw))]
+    public static class ScoutmasterPatch
+    {
+        [HarmonyPostfix]
+        private static void ScoutmasterPatchPostfix(Scoutmaster __instance)
+        {
+            if (__instance.currentTarget != Character.localCharacter) { return; }
+
+            var steamId = GetSteamId();
+            var mapId = GetMapId();
+            var mapSegment = GetMapSegment();
+
+            Debug.Log("Player flung by scoutmaster, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
+            //MedalPeakPlugin.SendEventAsync("3", "Player Flung");
+        }
+    }
 
     private static string GetSteamId() => SteamUser.GetSteamID().ToString();
     private static int GetMapId() => GameHandler.GetService<NextLevelService>().Data.Value.CurrentLevelIndex;
     private static int GetMapSegment() => (int)MapHandler.Instance.GetCurrentSegment();
 
-    // networking functions stripped from the Medal REPO Plugin for convenience
+    // networking functions stripped from the Medal REPO Plugin for convenience and slightly modified
     internal static async Task SendEventAsync(string eventId, string eventName)
     {
         using (HttpClient client = new HttpClient())
