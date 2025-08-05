@@ -134,7 +134,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
         private static bool isFalling = false;
     }
 
-    // player gets flung by scoutmaster
+    // handle player being flung by scoutmaster
     [HarmonyPatch(typeof(Scoutmaster), nameof(Scoutmaster.RPCA_Throw))]
     public static class ScoutmasterPatch
     {
