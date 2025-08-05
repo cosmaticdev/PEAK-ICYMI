@@ -66,12 +66,12 @@ public class MedalPeakPlugin : BaseUnityPlugin
             Debug.Log("Player passed out, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
             if (!fallCausedByScoutmaster)
             {
-                //MedalPeakPlugin.SendEventAsync("1", "Player Passed Out");
+                MedalPeakPlugin.SendEventAsync("1", "Player Passed Out", 30, 5000);
             }
             else
             {
                 fallCausedByScoutmaster = false;
-                //MedalPeakPlugin.SendEventAsync("4", "Player Thrown By Scoutmaster");
+                MedalPeakPlugin.SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
             }
         }
     }
@@ -86,7 +86,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
         var steamId = GetSteamId();
         var mapId = GetMapId();
         var mapSegment = GetMapSegment();
-        //MedalPeakPlugin.SendEventAsync("2", "Player Died");
+        MedalPeakPlugin.SendEventAsync("2", "Player Died Instantly", 30, 10000);
     }
 
 
@@ -139,11 +139,11 @@ public class MedalPeakPlugin : BaseUnityPlugin
 
                         if (!fallCausedByScoutmaster)
                         {
-                            //MedalPeakPlugin.SendEventAsync("3", "Large Fall");
+                            MedalPeakPlugin.SendEventAsync("3", "Large Fall", 30, 5000);
                         }
                         else
                         {
-                            //MedalPeakPlugin.SendEventAsync("4", "Player Thrown By Scoutmaster");
+                            MedalPeakPlugin.SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
                         }
                     }
 
@@ -179,7 +179,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     private static int GetMapSegment() => (int)MapHandler.Instance.GetCurrentSegment();
 
     // networking functions stripped from the Medal REPO Plugin for convenience and slightly modified
-    internal static async Task SendEventAsync(string eventId, string eventName)
+    internal static async Task SendEventAsync(string eventId, string eventName, int duration, int captureDelayMs)
     {
         using (HttpClient client = new HttpClient())
         {
@@ -198,8 +198,9 @@ public class MedalPeakPlugin : BaseUnityPlugin
                 triggerActions = new string[1] { "SaveClip" },
                 clipOptions = new
                 {
-                    duration = 30,
-                    alertType = "Disabled"
+                    duration,
+                    captureDelayMs,
+                    alertType = "SoundOnly",//alertType = "Disabled",
                 }
             };
             StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
