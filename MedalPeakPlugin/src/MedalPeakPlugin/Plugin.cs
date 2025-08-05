@@ -55,7 +55,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     public static class CharacterPassOutPatch
     {
         [HarmonyPostfix]
-        private static void CharacterPassOutRPCAPostfix(Character __instance)
+        private static async Task CharacterPassOutRPCAPostfix(Character __instance)
         {
             if (__instance != Character.localCharacter) return;
 
@@ -66,12 +66,12 @@ public class MedalPeakPlugin : BaseUnityPlugin
             Debug.Log("Player passed out, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
             if (!fallCausedByScoutmaster)
             {
-                MedalPeakPlugin.SendEventAsync("1", "Player Passed Out", 30, 5000);
+                await SendEventAsync("1", "Player Passed Out", 30, 5000);
             }
             else
             {
                 fallCausedByScoutmaster = false;
-                MedalPeakPlugin.SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
+                await SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
             }
         }
     }
@@ -79,14 +79,14 @@ public class MedalPeakPlugin : BaseUnityPlugin
     // handle instant player death (ex from an item that kills you with no chance for revive)
     [HarmonyPatch(typeof(Character), "DieInstantly")]
     [HarmonyPostfix]
-    private static void DieInstantlyPostFix(CharacterMovement __instance)
+    private static async Task DieInstantlyPostFix(CharacterMovement __instance)
     {
         Debug.Log("Player died instantly");
 
         var steamId = GetSteamId();
         var mapId = GetMapId();
         var mapSegment = GetMapSegment();
-        MedalPeakPlugin.SendEventAsync("2", "Player Died Instantly", 30, 10000);
+        await SendEventAsync("2", "Player Died Instantly", 30, 10000);
     }
 
 
@@ -95,7 +95,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     class PlayerFallPatch
     {
         [HarmonyPostfix]
-        static void PlayerFallPostFix(Character __instance)
+        static async Task PlayerFallPostFix(Character __instance)
         {
             bool isOutOfStamina = __instance.data.currentStamina < 0.005f && __instance.data.extraStamina < 0.001f;
             bool noStaminaFall = isOutOfStamina && __instance.data.avarageVelocity.y < -9.0f;
@@ -139,11 +139,11 @@ public class MedalPeakPlugin : BaseUnityPlugin
 
                         if (!fallCausedByScoutmaster)
                         {
-                            MedalPeakPlugin.SendEventAsync("3", "Large Fall", 30, 5000);
+                            await SendEventAsync("3", "Large Fall", 30, 5000);
                         }
                         else
                         {
-                            MedalPeakPlugin.SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
+                            await SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
                         }
                     }
 
