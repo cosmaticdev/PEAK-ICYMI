@@ -19,6 +19,9 @@ public class MedalPeakPlugin : BaseUnityPlugin
     internal Harmony? Harmony { get; set; }
     internal static ManualLogSource Log { get; private set; } = null!;
 
+    internal static float timeOfLastClip = 0;
+    internal static bool fallCausedByScoutmaster = false;
+
     private void Awake()
     {
         Instance = this;
@@ -60,8 +63,16 @@ public class MedalPeakPlugin : BaseUnityPlugin
             var mapId = GetMapId();
             var mapSegment = GetMapSegment();
 
-            Debug.Log("Player died, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
-            //MedalPeakPlugin.SendEventAsync("1", "Player Died");
+            Debug.Log("Player passed out, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
+            if (!fallCausedByScoutmaster)
+            {
+                //MedalPeakPlugin.SendEventAsync("1", "Player Passed Out");
+            }
+            else
+            {
+                fallCausedByScoutmaster = false;
+                //MedalPeakPlugin.SendEventAsync("4", "Player Thrown By Scoutmaster");
+            }
         }
     }
 
@@ -75,7 +86,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
         var steamId = GetSteamId();
         var mapId = GetMapId();
         var mapSegment = GetMapSegment();
-        //MedalPeakPlugin.SendEventAsync("1", "Player Died");
+        //MedalPeakPlugin.SendEventAsync("2", "Player Died");
     }
 
 
@@ -125,8 +136,18 @@ public class MedalPeakPlugin : BaseUnityPlugin
                         var steamId = GetSteamId();
                         var mapId = GetMapId();
                         var mapSegment = GetMapSegment();
-                        //MedalPeakPlugin.SendEventAsync("2", "Large Fall");
+
+                        if (!fallCausedByScoutmaster)
+                        {
+                            //MedalPeakPlugin.SendEventAsync("3", "Large Fall");
+                        }
+                        else
+                        {
+                            //MedalPeakPlugin.SendEventAsync("4", "Player Thrown By Scoutmaster");
+                        }
                     }
+
+                    fallCausedByScoutmaster = false; // further falls are definetly not by the scoutmaster
                 }
             }
         }
@@ -143,12 +164,13 @@ public class MedalPeakPlugin : BaseUnityPlugin
         {
             if (__instance.currentTarget != Character.localCharacter) { return; }
 
+            fallCausedByScoutmaster = true;
+
             var steamId = GetSteamId();
             var mapId = GetMapId();
             var mapSegment = GetMapSegment();
 
             Debug.Log("Player flung by scoutmaster, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
-            //MedalPeakPlugin.SendEventAsync("3", "Player Flung");
         }
     }
 
@@ -161,6 +183,13 @@ public class MedalPeakPlugin : BaseUnityPlugin
     {
         using (HttpClient client = new HttpClient())
         {
+            if (Time.time - 5 > timeOfLastClip)
+            {
+                Debug.Log("Multiple clips really close together blocked");
+                return;
+            }
+            timeOfLastClip = Time.time;
+
             client.DefaultRequestHeaders.Add("publicKey", "pub_7yyLREtjlmTJeGtpI8wWR9NxpIkuvTF1");
             var jsonPayload = new
             {
