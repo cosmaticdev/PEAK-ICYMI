@@ -20,7 +20,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     internal Harmony? Harmony { get; set; }
     internal static ManualLogSource Log { get; private set; } = null!;
 
-    internal static float timeOfLastClip = 0;
+    internal static float timeOfLastClip = 1;
     internal static bool fallCausedByScoutmaster = false;
 
     private void Awake()
@@ -73,6 +73,41 @@ public class MedalPeakPlugin : BaseUnityPlugin
                 CSteamID memberID = SteamMatchmaking.GetLobbyMemberByIndex(lobbyID, i);
                 string name = SteamFriends.GetFriendPersonaName(memberID);
                 Debug.Log($"Player {i}: {name} (id {memberID})");
+            }
+
+
+            new LobbyChatUpdateHandler();
+        }
+    }
+
+    public class LobbyChatUpdateHandler
+    {
+        private Callback<LobbyChatUpdate_t> _lobbyChatUpdate;
+
+        public LobbyChatUpdateHandler()
+        {
+            _lobbyChatUpdate = Callback<LobbyChatUpdate_t>.Create(OnLobbyChatUpdate);
+        }
+
+        private void OnLobbyChatUpdate(LobbyChatUpdate_t callback)
+        {
+            CSteamID lobbyID = new CSteamID(callback.m_ulSteamIDLobby);
+            CSteamID userChanged = new CSteamID(callback.m_ulSteamIDUserChanged);
+
+            EChatMemberStateChange stateChange = (EChatMemberStateChange)callback.m_rgfChatMemberStateChange;
+
+            if (stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeEntered))
+            {
+                string name = SteamFriends.GetFriendPersonaName(userChanged);
+                Debug.Log($"Player Joined: {name} (ID: {userChanged})");
+            }
+            else if (stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeLeft) ||
+                     stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeDisconnected) ||
+                     stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeKicked) ||
+                     stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeBanned))
+            {
+                string name = SteamFriends.GetFriendPersonaName(userChanged);
+                Debug.Log($"Player Left: {name} (ID: {userChanged})");
             }
         }
     }
@@ -210,7 +245,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     {
         using (HttpClient client = new HttpClient())
         {
-            if (Time.time - 5 > timeOfLastClip)
+            if ((Time.time - timeOfLastClip - 5) < 0)
             {
                 Debug.Log("Multiple clips really close together blocked");
                 return;
@@ -227,7 +262,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
                 {
                     duration,
                     captureDelayMs,
-                    alertType = "SoundOnly",//alertType = "Disabled",
+                    alertType = "Disabled",
                 }
             };
             StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
