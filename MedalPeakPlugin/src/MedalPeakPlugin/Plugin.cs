@@ -9,6 +9,8 @@ using UnityEngine;
 using Newtonsoft.Json;
 using Steamworks;
 using Photon.Pun;
+using System;
+using Photon.Chat.UtilityScripts;
 
 #nullable enable
 namespace MedalPeakPlugin;
@@ -67,13 +69,18 @@ public class MedalPeakPlugin : BaseUnityPlugin
             CSteamID lobbyID = new CSteamID(param.m_ulSteamIDLobby);
             Debug.Log($"Joined lobby with ID: {lobbyID}");
 
+            List<PlayerModel> otherPlayers = new List<PlayerModel>();
+
             int count = SteamMatchmaking.GetNumLobbyMembers(lobbyID);
             for (int i = 0; i < count; i++)
             {
                 CSteamID memberID = SteamMatchmaking.GetLobbyMemberByIndex(lobbyID, i);
                 string name = SteamFriends.GetFriendPersonaName(memberID);
                 Debug.Log($"Player {i}: {name} (id {memberID})");
+                otherPlayers.Add(new PlayerModel(memberID.ToString(), name));
             }
+
+            SendContextAsync(new PlayerModel(GetSteamId(), GetUsername()), lobbyID.ToString(), otherPlayers);
 
 
             new LobbyChatUpdateHandler();
@@ -237,6 +244,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     }
 
     private static string GetSteamId() => SteamUser.GetSteamID().ToString();
+    private static string GetUsername() => SteamFriends.GetPersonaName();
     private static int GetMapId() => GameHandler.GetService<NextLevelService>().Data.Value.CurrentLevelIndex;
     private static int GetMapSegment() => (int)MapHandler.Instance.GetCurrentSegment();
 
