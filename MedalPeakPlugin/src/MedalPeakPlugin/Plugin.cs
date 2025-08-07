@@ -128,12 +128,12 @@ public class MedalPeakPlugin : BaseUnityPlugin
             Debug.Log("Player passed out, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
             if (!fallCausedByScoutmaster)
             {
-                SendEventAsync("1", "Player Passed Out", 30, 5000);
+                SendEventAsync("1", "Passed Out", 30, 5000);
             }
             else
             {
                 fallCausedByScoutmaster = false;
-                SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
+                SendEventAsync("4", "Thrown By Scoutmaster", 60, 5000);
             }
         }
     }
@@ -148,7 +148,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
         var steamId = GetSteamId();
         var mapId = GetMapId();
         var mapSegment = GetMapSegment();
-        SendEventAsync("2", "Player Died Instantly", 30, 10000);
+        SendEventAsync("2", "Died Instantly", 30, 10000);
     }
 
 
@@ -205,7 +205,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
                         }
                         else
                         {
-                            SendEventAsync("4", "Player Thrown By Scoutmaster", 60, 5000);
+                            SendEventAsync("4", "Thrown By Scoutmaster", 60, 5000);
                         }
                     }
 
