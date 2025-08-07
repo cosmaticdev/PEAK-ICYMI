@@ -59,7 +59,6 @@ public class MedalPeakPlugin : BaseUnityPlugin
     {
         private static void Prefix(LobbyEnter_t param)
         {
-            //IL_0000: Unknown result type (might be due to invalid IL or missing references)
             if (param.m_EChatRoomEnterResponse == 2)
             {
                 Debug.Log((object)"cant join this lobby");
@@ -80,7 +79,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
                 otherPlayers.Add(new PlayerModel(memberID.ToString(), name));
             }
 
-            SendContextAsync(new PlayerModel(GetSteamId(), GetUsername()), lobbyID.ToString(), otherPlayers);
+            _ = SendContextAsync(new PlayerModel(GetSteamId(), GetUsername()), lobbyID.ToString(), otherPlayers);
 
 
             new LobbyChatUpdateHandler();
@@ -135,12 +134,12 @@ public class MedalPeakPlugin : BaseUnityPlugin
             Debug.Log("Player passed out, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
             if (!fallCausedByScoutmaster)
             {
-                SendEventAsync("1", "Passed Out", 30, 5000);
+                _ = SendEventAsync("1", "Passed Out", 30, 5000);
             }
             else
             {
                 fallCausedByScoutmaster = false;
-                SendEventAsync("4", "Thrown By Scoutmaster", 60, 5000);
+                _ = SendEventAsync("4", "Thrown By Scoutmaster", 60, 5000);
             }
         }
     }
@@ -155,7 +154,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
         var steamId = GetSteamId();
         var mapId = GetMapId();
         var mapSegment = GetMapSegment();
-        SendEventAsync("2", "Died Instantly", 30, 10000);
+        _ = SendEventAsync("2", "Died Instantly", 30, 10000);
     }
 
 
@@ -208,11 +207,11 @@ public class MedalPeakPlugin : BaseUnityPlugin
 
                         if (!fallCausedByScoutmaster)
                         {
-                            SendEventAsync("3", "Large Fall", 30, 5000);
+                            _ = SendEventAsync("3", "Large Fall", 30, 5000);
                         }
                         else
                         {
-                            SendEventAsync("4", "Thrown By Scoutmaster", 60, 5000);
+                            _ = SendEventAsync("4", "Thrown By Scoutmaster", 60, 5000);
                         }
                     }
 
