@@ -8,9 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Newtonsoft.Json;
 using Steamworks;
-using Photon.Pun;
 using System;
-using Photon.Chat.UtilityScripts;
 
 #nullable enable
 namespace MedalPeakPlugin;
@@ -31,32 +29,25 @@ public class MedalPeakPlugin : BaseUnityPlugin
     private void Awake()
     {
         Instance = this;
-        Log = Logger;
 
         httpClient.DefaultRequestHeaders.Add("publicKey", "pub_7yyLREtjlmTJeGtpI8wWR9NxpIkuvTF1");
 
-        this.gameObject.transform.parent = null;
-        this.gameObject.hideFlags = (HideFlags)61;
-        this.Patch();
-        //Log.LogInfo($"Plugin has loaded!");
-        Debug.Log("Plugin Loaded------------------------");
+        gameObject.transform.parent = null;
+        gameObject.hideFlags = (HideFlags)61;
+        Patch();
+        Log.LogInfo($"{Info.Metadata.GUID} v{Info.Metadata.Version} has loaded!");
     }
 
     internal void Patch()
     {
-        if (this.Harmony == null)
+        if (Harmony == null)
         {
-            Harmony harmony;
-            this.Harmony = harmony = new Harmony("cosmatic.MedalPeakPlugin");
+            Harmony = _ = new Harmony("cosmatic.MedalPeakPlugin");
         }
-        this.Harmony.PatchAll();
+        Harmony.PatchAll();
     }
 
-    internal void Unpatch() => this.Harmony?.UnpatchSelf();
-
-    private void Update()
-    {
-    }
+    internal void Unpatch() => Harmony?.UnpatchSelf();
 
     // get all players in a lobby when you join
     [HarmonyPatch(typeof(SteamLobbyHandler), "OnLobbyEnter")]
@@ -66,12 +57,12 @@ public class MedalPeakPlugin : BaseUnityPlugin
         {
             if (param.m_EChatRoomEnterResponse == 2)
             {
-                Debug.Log((object)"cant join this lobby");
+                Log.LogInfo("cant join this lobby");
                 return;
             }
 
             CSteamID lobbyID = new CSteamID(param.m_ulSteamIDLobby);
-            Debug.Log($"Joined lobby with ID: {lobbyID}");
+            Log.LogInfo($"Joined lobby with ID: {lobbyID}");
 
             List<PlayerModel> otherPlayers = new List<PlayerModel>();
 
@@ -80,7 +71,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             {
                 CSteamID memberID = SteamMatchmaking.GetLobbyMemberByIndex(lobbyID, i);
                 string name = SteamFriends.GetFriendPersonaName(memberID);
-                Debug.Log($"Player {i}: {name} (id {memberID})");
+                Log.LogInfo($"Player {i}: {name} (id {memberID})");
                 otherPlayers.Add(new PlayerModel(memberID.ToString(), name));
             }
 
@@ -115,7 +106,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             if (stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeEntered))
             {
                 string name = SteamFriends.GetFriendPersonaName(userChanged);
-                Debug.Log($"Player Joined: {name} (ID: {userChanged})");
+                Log.LogInfo($"Player Joined: {name} (ID: {userChanged})");
             }
             else if (stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeLeft) ||
                      stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeDisconnected) ||
@@ -123,7 +114,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
                      stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeBanned))
             {
                 string name = SteamFriends.GetFriendPersonaName(userChanged);
-                Debug.Log($"Player Left: {name} (ID: {userChanged})");
+                Log.LogInfo($"Player Left: {name} (ID: {userChanged})");
             }
         }
     }
@@ -137,11 +128,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
         {
             if (__instance != Character.localCharacter) return;
 
-            var steamId = GetSteamId();
-            var mapId = GetMapId();
-            var mapSegment = GetMapSegment();
-
-            Debug.Log("Player passed out, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
+            Log.LogInfo("Player passed out");
             if (!fallCausedByScoutmaster)
             {
                 _ = SendEventAsync("1", "Passed Out", 30, 5000);
@@ -159,11 +146,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     [HarmonyPostfix]
     private static void DieInstantlyPostFix(Character __instance)
     {
-        Debug.Log("Player died instantly");
-
-        var steamId = GetSteamId();
-        var mapId = GetMapId();
-        var mapSegment = GetMapSegment();
+        Log.LogInfo("Player died instantly");
         _ = SendEventAsync("2", "Died Instantly", 30, 10000);
     }
 
@@ -188,7 +171,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             {
                 if (!isFalling)
                 {
-                    Debug.Log("Player started Falling at " + Time.time + "------------");
+                    Log.LogInfo("Player started Falling at " + Time.time);
                     startedFalling = Time.time;
                     isFalling = true;
                 }
@@ -203,7 +186,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             {
                 if (isFalling)
                 {
-                    Debug.Log("Player stopped Falling; Landed at " + Time.time + " after " + (Time.time - startedFalling) + " seconds------------");
+                    Log.LogInfo("Player stopped Falling; Landed at after " + (Time.time - startedFalling) + " seconds");
                     isFalling = false;
 
                     if ((Time.time - startedFalling) >= 1)
@@ -215,10 +198,6 @@ public class MedalPeakPlugin : BaseUnityPlugin
                             // player got knocked out from that fall, we can let the pass out function handle the clip so we don't get duplicates
                             return;
                         }
-
-                        var steamId = GetSteamId();
-                        var mapId = GetMapId();
-                        var mapSegment = GetMapSegment();
 
                         if (!fallCausedByScoutmaster)
                         {
@@ -246,12 +225,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             if (__instance.currentTarget != Character.localCharacter) { return; }
 
             fallCausedByScoutmaster = true;
-
-            var steamId = GetSteamId();
-            var mapId = GetMapId();
-            var mapSegment = GetMapSegment();
-
-            Debug.Log("Player flung by scoutmaster, steamid: " + steamId + ", mapid: " + mapId + ", mapsegment: " + mapSegment);
+            Log.LogInfo("Player flung by scoutmaster");
         }
     }
 
@@ -276,15 +250,15 @@ public class MedalPeakPlugin : BaseUnityPlugin
     {
         if ((Time.time - timeOfLastClip - 5) < 0)
         {
-            Debug.Log("Multiple clips really close together blocked");
+            Log.LogInfo("Multiple clips really close together blocked");
             return;
         }
         timeOfLastClip = Time.time;
 
         var jsonPayload = new
         {
-            eventId = eventId,
-            eventName = eventName,
+            eventId,
+            eventName,
             triggerActions = new string[1] { "SaveClip" },
             clipOptions = new
             {
@@ -294,23 +268,19 @@ public class MedalPeakPlugin : BaseUnityPlugin
             }
         };
         StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
-        HttpResponseMessage httpResponseMessage = await httpClient.PostAsync("http://localhost:12665/api/v1/event/invoke", content);
-        jsonPayload = null;
-        content = null;
+        _ = await httpClient.PostAsync("http://localhost:12665/api/v1/event/invoke", content);
     }
 
     internal static async Task SendContextAsync(PlayerModel localPlayer, string lobbyId, List<PlayerModel> otherPlayers)
     {
         var jsonPayload = new
         {
-            localPlayer = localPlayer,
+            localPlayer,
             serverId = lobbyId,
             matchId = lobbyId,
-            otherPlayers = otherPlayers
+            otherPlayers
         };
         StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
-        HttpResponseMessage httpResponseMessage = await httpClient.PostAsync("http://localhost:12665/api/v1/context/submit", content);
-        jsonPayload = null;
-        content = null;
+        _ = await httpClient.PostAsync("http://localhost:12665/api/v1/context/submit", content);
     }
 }
