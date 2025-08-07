@@ -25,10 +25,15 @@ public class MedalPeakPlugin : BaseUnityPlugin
     internal static float timeOfLastClip = 1;
     internal static bool fallCausedByScoutmaster = false;
 
+    private static readonly HttpClient httpClient = new HttpClient();
+    private static LobbyChatUpdateHandler? currentLobbyHandler;
+
     private void Awake()
     {
         Instance = this;
         Log = Logger;
+
+        httpClient.DefaultRequestHeaders.Add("publicKey", "pub_7yyLREtjlmTJeGtpI8wWR9NxpIkuvTF1");
 
         this.gameObject.transform.parent = null;
         this.gameObject.hideFlags = (HideFlags)61;
@@ -81,18 +86,23 @@ public class MedalPeakPlugin : BaseUnityPlugin
 
             _ = SendContextAsync(new PlayerModel(GetSteamId(), GetUsername()), lobbyID.ToString(), otherPlayers);
 
-
-            new LobbyChatUpdateHandler();
+            currentLobbyHandler?.Dispose();
+            currentLobbyHandler = new LobbyChatUpdateHandler();
         }
     }
 
-    public class LobbyChatUpdateHandler
+    public class LobbyChatUpdateHandler : IDisposable
     {
         private Callback<LobbyChatUpdate_t> _lobbyChatUpdate;
 
         public LobbyChatUpdateHandler()
         {
             _lobbyChatUpdate = Callback<LobbyChatUpdate_t>.Create(OnLobbyChatUpdate);
+        }
+
+        public void Dispose()
+        {
+            _lobbyChatUpdate?.Dispose();
         }
 
         private void OnLobbyChatUpdate(LobbyChatUpdate_t callback)
@@ -184,6 +194,11 @@ public class MedalPeakPlugin : BaseUnityPlugin
                 }
             }
 
+            if (__instance.data.isGrounded)
+            {
+                fallCausedByScoutmaster = false;
+            }
+
             if (__instance.data.isGrounded && (afflictionsInRange || __instance.data.deathTimer > 0.01f))
             {
                 if (isFalling)
@@ -214,8 +229,6 @@ public class MedalPeakPlugin : BaseUnityPlugin
                             _ = SendEventAsync("4", "Thrown By Scoutmaster", 60, 5000);
                         }
                     }
-
-                    fallCausedByScoutmaster = false; // further falls are definetly not by the scoutmaster
                 }
             }
         }
@@ -244,60 +257,60 @@ public class MedalPeakPlugin : BaseUnityPlugin
 
     private static string GetSteamId() => SteamUser.GetSteamID().ToString();
     private static string GetUsername() => SteamFriends.GetPersonaName();
-    private static int GetMapId() => GameHandler.GetService<NextLevelService>().Data.Value.CurrentLevelIndex;
-    private static int GetMapSegment() => (int)MapHandler.Instance.GetCurrentSegment();
+    private static int GetMapId()
+    {
+        var service = GameHandler.GetService<NextLevelService>();
+        if (service?.Data == null)
+            return -1;
+        return service.Data.Value.CurrentLevelIndex;
+    }
+    private static int GetMapSegment()
+    {
+        if (MapHandler.Instance == null)
+            return -1;
+        return (int)MapHandler.Instance.GetCurrentSegment();
+    }
 
     // networking functions stripped from the Medal REPO Plugin for convenience and slightly modified
     internal static async Task SendEventAsync(string eventId, string eventName, int duration, int captureDelayMs)
     {
-        using (HttpClient client = new HttpClient())
+        if ((Time.time - timeOfLastClip - 5) < 0)
         {
-            if ((Time.time - timeOfLastClip - 5) < 0)
-            {
-                Debug.Log("Multiple clips really close together blocked");
-                return;
-            }
-            timeOfLastClip = Time.time;
-
-            client.DefaultRequestHeaders.Add("publicKey", "pub_7yyLREtjlmTJeGtpI8wWR9NxpIkuvTF1");
-            var jsonPayload = new
-            {
-                eventId = eventId,
-                eventName = eventName,
-                triggerActions = new string[1] { "SaveClip" },
-                clipOptions = new
-                {
-                    duration,
-                    captureDelayMs,
-                    alertType = "Disabled",
-                }
-            };
-            StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
-            HttpResponseMessage httpResponseMessage = await client.PostAsync("http://localhost:12665/api/v1/event/invoke", content);
-            jsonPayload = null;
-            content = null;
+            Debug.Log("Multiple clips really close together blocked");
+            return;
         }
+        timeOfLastClip = Time.time;
+
+        var jsonPayload = new
+        {
+            eventId = eventId,
+            eventName = eventName,
+            triggerActions = new string[1] { "SaveClip" },
+            clipOptions = new
+            {
+                duration,
+                captureDelayMs,
+                alertType = "Disabled",
+            }
+        };
+        StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
+        HttpResponseMessage httpResponseMessage = await httpClient.PostAsync("http://localhost:12665/api/v1/event/invoke", content);
+        jsonPayload = null;
+        content = null;
     }
 
-    internal static async Task SendContextAsync(
-      PlayerModel localPlayer,
-      string lobbyId,
-      List<PlayerModel> otherPlayers)
+    internal static async Task SendContextAsync(PlayerModel localPlayer, string lobbyId, List<PlayerModel> otherPlayers)
     {
-        using (HttpClient client = new HttpClient())
+        var jsonPayload = new
         {
-            client.DefaultRequestHeaders.Add("publicKey", "pub_7yyLREtjlmTJeGtpI8wWR9NxpIkuvTF1");
-            var jsonPayload = new
-            {
-                localPlayer = localPlayer,
-                serverId = lobbyId,
-                matchId = lobbyId,
-                otherPlayers = otherPlayers
-            };
-            StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
-            HttpResponseMessage httpResponseMessage = await client.PostAsync("http://localhost:12665/api/v1/context/submit", content);
-            jsonPayload = null;
-            content = null;
-        }
+            localPlayer = localPlayer,
+            serverId = lobbyId,
+            matchId = lobbyId,
+            otherPlayers = otherPlayers
+        };
+        StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
+        HttpResponseMessage httpResponseMessage = await httpClient.PostAsync("http://localhost:12665/api/v1/context/submit", content);
+        jsonPayload = null;
+        content = null;
     }
 }
