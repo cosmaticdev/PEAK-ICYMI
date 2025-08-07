@@ -57,7 +57,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     [HarmonyPatch(typeof(SteamLobbyHandler), "OnLobbyEnter")]
     public class LobbyEnterPatch
     {
-        private static void Prefix(LobbyEnter_t param)
+        private static void Prefix(in LobbyEnter_t param)
         {
             if (param.m_EChatRoomEnterResponse == 2)
             {
