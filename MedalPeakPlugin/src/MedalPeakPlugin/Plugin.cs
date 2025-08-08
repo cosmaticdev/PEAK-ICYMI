@@ -9,6 +9,7 @@ using UnityEngine;
 using Newtonsoft.Json;
 using Steamworks;
 using System;
+using UnityEngine.Rendering.Universal;
 
 #nullable enable
 namespace MedalPeakPlugin;
@@ -18,7 +19,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
 {
     internal static MedalPeakPlugin? Instance { get; private set; }
     internal Harmony? Harmony { get; set; }
-    internal static ManualLogSource Log { get; private set; } = null!;
+    internal new static ManualLogSource Logger { get; private set; } = null!;
 
     internal static float timeOfLastClip = 1;
     internal static bool fallCausedByScoutmaster = false;
@@ -29,13 +30,14 @@ public class MedalPeakPlugin : BaseUnityPlugin
     private void Awake()
     {
         Instance = this;
+        Logger = base.Logger;
 
         httpClient.DefaultRequestHeaders.Add("publicKey", "pub_7yyLREtjlmTJeGtpI8wWR9NxpIkuvTF1");
 
         gameObject.transform.parent = null;
         gameObject.hideFlags = (HideFlags)61;
         Patch();
-        Log.LogInfo($"{Info.Metadata.GUID} v{Info.Metadata.Version} has loaded!");
+        Logger.LogInfo($"{Info.Metadata.GUID} v{Info.Metadata.Version} has loaded!");
     }
 
     internal void Patch()
@@ -57,12 +59,12 @@ public class MedalPeakPlugin : BaseUnityPlugin
         {
             if (param.m_EChatRoomEnterResponse == 2)
             {
-                Log.LogInfo("cant join this lobby");
+                MedalPeakPlugin.Logger.LogInfo("cant join this lobby");
                 return;
             }
 
             CSteamID lobbyID = new CSteamID(param.m_ulSteamIDLobby);
-            Log.LogInfo($"Joined lobby with ID: {lobbyID}");
+            Logger.LogInfo($"Joined lobby with ID: {lobbyID}");
 
             List<PlayerModel> otherPlayers = new List<PlayerModel>();
 
@@ -71,7 +73,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             {
                 CSteamID memberID = SteamMatchmaking.GetLobbyMemberByIndex(lobbyID, i);
                 string name = SteamFriends.GetFriendPersonaName(memberID);
-                Log.LogInfo($"Player {i}: {name} (id {memberID})");
+                Logger.LogInfo($"Player {i}: {name} (id {memberID})");
                 otherPlayers.Add(new PlayerModel(memberID.ToString(), name));
             }
 
@@ -106,7 +108,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             if (stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeEntered))
             {
                 string name = SteamFriends.GetFriendPersonaName(userChanged);
-                Log.LogInfo($"Player Joined: {name} (ID: {userChanged})");
+                Logger.LogInfo($"Player Joined: {name} (ID: {userChanged})");
             }
             else if (stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeLeft) ||
                      stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeDisconnected) ||
@@ -114,7 +116,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
                      stateChange.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeBanned))
             {
                 string name = SteamFriends.GetFriendPersonaName(userChanged);
-                Log.LogInfo($"Player Left: {name} (ID: {userChanged})");
+                Logger.LogInfo($"Player Left: {name} (ID: {userChanged})");
             }
         }
     }
@@ -128,7 +130,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
         {
             if (__instance != Character.localCharacter) return;
 
-            Log.LogInfo("Player passed out");
+            Logger.LogInfo("Player passed out");
             if (!fallCausedByScoutmaster)
             {
                 _ = SendEventAsync("1", "Passed Out", 30, 5000);
@@ -146,7 +148,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     [HarmonyPostfix]
     private static void DieInstantlyPostFix(Character __instance)
     {
-        Log.LogInfo("Player died instantly");
+        Logger.LogInfo("Player died instantly");
         _ = SendEventAsync("2", "Died Instantly", 30, 10000);
     }
 
@@ -171,7 +173,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             {
                 if (!isFalling)
                 {
-                    Log.LogInfo("Player started Falling at " + Time.time);
+                    Logger.LogInfo("Player started Falling at " + Time.time);
                     startedFalling = Time.time;
                     isFalling = true;
                 }
@@ -186,7 +188,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             {
                 if (isFalling)
                 {
-                    Log.LogInfo("Player stopped Falling; Landed at after " + (Time.time - startedFalling) + " seconds");
+                    Logger.LogInfo("Player stopped Falling; Landed at after " + (Time.time - startedFalling) + " seconds");
                     isFalling = false;
 
                     if ((Time.time - startedFalling) >= 1)
@@ -225,7 +227,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             if (__instance.currentTarget != Character.localCharacter) { return; }
 
             fallCausedByScoutmaster = true;
-            Log.LogInfo("Player flung by scoutmaster");
+            Logger.LogInfo("Player flung by scoutmaster");
         }
     }
 
@@ -250,7 +252,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     {
         if ((Time.time - timeOfLastClip - 5) < 0)
         {
-            Log.LogInfo("Multiple clips really close together blocked");
+            Logger.LogInfo("Multiple clips really close together blocked");
             return;
         }
         timeOfLastClip = Time.time;
