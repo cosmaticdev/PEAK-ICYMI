@@ -22,7 +22,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
     internal new static ManualLogSource Logger { get; private set; } = null!;
 
     internal static float timeOfLastClip = 1;
-    internal static bool fallCausedByScoutmaster = false;
+    internal static bool clipCausedByScoutmaster = false;
 
     private static readonly HttpClient httpClient = new HttpClient();
     private static LobbyChatUpdateHandler? currentLobbyHandler;
@@ -131,15 +131,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             if (__instance != Character.localCharacter) return;
 
             Logger.LogInfo("Player passed out");
-            if (!fallCausedByScoutmaster)
-            {
-                _ = SendEventAsync("1", "Passed Out", 30, 5000);
-            }
-            else
-            {
-                fallCausedByScoutmaster = false;
-                _ = SendEventAsync("4", "Thrown By Scoutmaster", 60, 5000);
-            }
+            _ = SendEventAsync("1", "Passed Out", 30, 5000);
         }
     }
 
@@ -179,11 +171,6 @@ public class MedalPeakPlugin : BaseUnityPlugin
                 }
             }
 
-            if (__instance.data.isGrounded)
-            {
-                fallCausedByScoutmaster = false;
-            }
-
             if (__instance.data.isGrounded && (afflictionsInRange || __instance.data.deathTimer > 0.01f))
             {
                 if (isFalling)
@@ -201,14 +188,8 @@ public class MedalPeakPlugin : BaseUnityPlugin
                             return;
                         }
 
-                        if (!fallCausedByScoutmaster)
-                        {
-                            _ = SendEventAsync("3", "Large Fall", 30, 5000);
-                        }
-                        else
-                        {
-                            _ = SendEventAsync("4", "Thrown By Scoutmaster", 60, 5000);
-                        }
+                        _ = SendEventAsync("3", "Large Fall", 30, 5000);
+
                     }
                 }
             }
@@ -226,8 +207,8 @@ public class MedalPeakPlugin : BaseUnityPlugin
         {
             if (__instance.currentTarget != Character.localCharacter) { return; }
 
-            fallCausedByScoutmaster = true;
             Logger.LogInfo("Player flung by scoutmaster");
+            _ = SendEventAsync("4", "Thrown By Scoutmaster", 60, 15000);
         }
     }
 
@@ -250,12 +231,30 @@ public class MedalPeakPlugin : BaseUnityPlugin
     // networking functions stripped from the Medal REPO Plugin for convenience and slightly modified
     internal static async Task SendEventAsync(string eventId, string eventName, int duration, int captureDelayMs)
     {
-        if ((Time.time - timeOfLastClip - 5) < 0)
+        if (!clipCausedByScoutmaster)
         {
-            Logger.LogInfo("Multiple clips really close together blocked");
-            return;
+            if ((Time.time - timeOfLastClip - 5) < 0)
+            {
+                Logger.LogInfo("Event probably overlapping with other event blocked");
+                return;
+            }
+            timeOfLastClip = Time.time;
         }
-        timeOfLastClip = Time.time;
+        else
+        {
+            if ((Time.time - timeOfLastClip - 20) < 0)
+            {
+                Logger.LogInfo("Event probably caused by scoutmaster throw blocked");
+                return;
+            }
+            clipCausedByScoutmaster = false; // scoutmaster cooldown has passed
+            timeOfLastClip = Time.time;
+        }
+
+        if (eventId == "4")
+        {
+            clipCausedByScoutmaster = true;
+        }
 
         var jsonPayload = new
         {
