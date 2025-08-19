@@ -14,10 +14,4 @@
     </RestoreAdditionalProjectSources>
     <RootNamespace>MedalPeakPlugin</RootNamespace>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Reference Include="Newtonsoft">
-      <HintPath>C:\Users\Mineb\AppData\Local\Medal\recorder-3.1062.0\Plugins\Steam\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-  </ItemGroup>
 </Project>

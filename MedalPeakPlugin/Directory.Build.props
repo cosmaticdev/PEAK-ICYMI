@@ -39,4 +39,10 @@
     <ManagedDir>$(PeakGameRootDir)/PEAK_Data/Managed/</ManagedDir>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="Newtonsoft">
+      <HintPath>$(SolutionRoot)/Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
