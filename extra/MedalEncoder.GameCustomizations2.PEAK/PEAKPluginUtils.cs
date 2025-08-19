@@ -79,7 +79,7 @@ internal class PEAKPluginUtils
       }
       else
       {
-        string path = Path.Combine(directory, "BepInEx", "plugins", "MedalTV-MedalPEAKPlugin");
+        string path = Path.Combine(directory, "BepInEx", "plugins", "MedalTV-MedalPeakPlugin");
         if (Directory.Exists(path))
           Directory.Delete(path, true);
       }
@@ -102,7 +102,7 @@ internal class PEAKPluginUtils
     }
     else
     {
-      string path2 = Path.Combine(str, "BepInEx", "plugins", "MedalTV-MedalPEAKPlugin");
+      string path2 = Path.Combine(str, "BepInEx", "plugins", "MedalTV-MedalPeakPlugin");
       if (!Directory.Exists(path2))
         return;
       Directory.Delete(path2, true);
@@ -127,8 +127,8 @@ internal class PEAKPluginUtils
   private static void InstallPluginToDirectory(string baseDir)
   {
     string sourceFileName = Path.Combine(PEAKPluginUtils._recorderPluginsDir, "PEAK", "MedalPeakPlugin.dll");
-    string str1 = Path.Combine(baseDir, "BepInEx", "plugins", "MedalTV-MedalPEAKPlugin");
-    string str2 = Path.Combine(str1, "MedalPEAKPlugin.dll");
+    string str1 = Path.Combine(baseDir, "BepInEx", "plugins", "MedalTV-MedalPeakPlugin");
+    string str2 = Path.Combine(str1, "MedalPeakPlugin.dll");
     if (!Directory.Exists(str1))
       Directory.CreateDirectory(str1);
     string destFileName = str2;
@@ -186,7 +186,7 @@ internal class PEAKPluginUtils
     }
     foreach (string path1_2 in stringList)
     {
-      if (!File.Exists(Path.Combine(path1_2, "MedalTV-MedalPEAKPlugin", "MedalPEAKPlugin.dll")))
+      if (!File.Exists(Path.Combine(path1_2, "MedalTV-MedalPeakPlugin", "MedalPeakPlugin.dll")))
         return PEAKPluginUtils.PluginStatus.MODS_NOT_INSTALLED;
     }
     return PEAKPluginUtils.PluginStatus.MODS_INSTALLED;
@@ -194,7 +194,7 @@ internal class PEAKPluginUtils
 
   private static PEAKPluginUtils.PluginStatus GameModInstalled()
   {
-    return !File.Exists(Path.Combine(Path.Combine(Path.Combine(GameFilePaths.GetGameLibraryBasePath("steamapps\\common\\PEAK", "steamapps\\common\\PEAK\\PEAK.exe"), "steamapps\\common\\PEAK"), "BepInEx", "plugins", "MedalTV-MedalPEAKPlugin"), "MedalPEAKPlugin.dll")) ? PEAKPluginUtils.PluginStatus.MODS_NOT_INSTALLED : PEAKPluginUtils.PluginStatus.MODS_INSTALLED;
+    return !File.Exists(Path.Combine(Path.Combine(Path.Combine(GameFilePaths.GetGameLibraryBasePath("steamapps\\common\\PEAK", "steamapps\\common\\PEAK\\PEAK.exe"), "steamapps\\common\\PEAK"), "BepInEx", "plugins", "MedalTV-MedalPeakPlugin"), "MedalPeakPlugin.dll")) ? PEAKPluginUtils.PluginStatus.MODS_NOT_INSTALLED : PEAKPluginUtils.PluginStatus.MODS_INSTALLED;
   }
 
   public enum PluginStatus
