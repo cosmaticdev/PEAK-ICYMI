@@ -126,7 +126,7 @@ internal class PEAKPluginUtils
 
   private static void InstallPluginToDirectory(string baseDir)
   {
-    string sourceFileName = Path.Combine(PEAKPluginUtils._recorderPluginsDir, "PEAK", "MedalPEAKPlugin.dll");
+    string sourceFileName = Path.Combine(PEAKPluginUtils._recorderPluginsDir, "PEAK", "MedalPeakPlugin.dll");
     string str1 = Path.Combine(baseDir, "BepInEx", "plugins", "MedalTV-MedalPEAKPlugin");
     string str2 = Path.Combine(str1, "MedalPEAKPlugin.dll");
     if (!Directory.Exists(str1))
