@@ -1,4 +1,4 @@
-## ICYMI; Automatic Medal clipping for PEAK<br>v1.0 [coming soon] by cosmatic
+## ICYMI; Automatic Medal clipping for PEAK<br>v1.0 8/19/2025 by cosmatic
 Automatically clip epic moments in PEAK using Medal's public [game API](https://docs.medal.tv/gameapi/index.html). Medal must be installed and running for this plugin to have any functionality.
 
 ## What events are detected?
