@@ -276,6 +276,17 @@ public class MedalPeakPlugin : BaseUnityPlugin
         }
     }
 
+    // handle helicopter triggering (aka players won)
+    [HarmonyPatch(typeof(Flare), nameof(Flare.TriggerHelicopter))]
+    public static class FlarePatch
+    {
+        private static void FlarePostFix()
+        {
+            Logger.LogInfo("Helicopter Triggered");
+            _ = SendEventAsync("9", "Called Helicopter", 60, 15000);
+        }
+    }
+
     private static string GetSteamId() => SteamUser.GetSteamID().ToString();
     private static string GetUsername() => SteamFriends.GetPersonaName();
     private static int GetMapId()
