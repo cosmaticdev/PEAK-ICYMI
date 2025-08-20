@@ -254,6 +254,30 @@ public class MedalPeakPlugin : BaseUnityPlugin
         }
     }
 
+    // handle game starting
+    [HarmonyPatch(typeof(GameOverHandler), nameof(GameOverHandler.BeginIslandLoadRPC))]
+    public static class IslandLoadPatch
+    {
+        [HarmonyPostfix]
+        private static void IslandLoadRPCAPostfix()
+        {
+            Logger.LogInfo("Island began loading");
+            // do something
+        }
+    }
+
+    // handle players winning
+    [HarmonyPatch(typeof(Flare), nameof(Flare.TriggerHelicopter))]
+    public static class FlarePatch
+    {
+        [HarmonyPostfix]
+        private static void FlarePatchRPCAPostfix()
+        {
+            Logger.LogInfo("Helicopter triggered");
+            // do something
+        }
+    }
+
     private static string GetSteamId() => SteamUser.GetSteamID().ToString();
     private static string GetUsername() => SteamFriends.GetPersonaName();
     private static int GetMapId()
