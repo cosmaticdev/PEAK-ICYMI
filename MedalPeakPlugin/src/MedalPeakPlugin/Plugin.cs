@@ -145,7 +145,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             if (__instance != Character.localCharacter) return;
 
             Logger.LogInfo("Player got revived");
-            // do something
+            _ = SendEventAsync("6", "Revived", 0, 0);
         }
     }
 
@@ -159,7 +159,7 @@ public class MedalPeakPlugin : BaseUnityPlugin
             if (__instance != Character.localCharacter) return;
 
             Logger.LogInfo("Player woke up from being passed out");
-            // do something
+            _ = SendEventAsync("7", "Woke Up", 0, 0);
         }
     }
 
@@ -254,27 +254,25 @@ public class MedalPeakPlugin : BaseUnityPlugin
         }
     }
 
-    // handle game starting
-    [HarmonyPatch(typeof(GameOverHandler), nameof(GameOverHandler.BeginIslandLoadRPC))]
-    public static class IslandLoadPatch
+    // handle run starting
+    [HarmonyPatch(typeof(RunManager), "StartRun")]
+    private static class StartRunPatch
     {
-        [HarmonyPostfix]
-        private static void IslandLoadRPCAPostfix()
+        private static void StartRunPostFix()
         {
-            Logger.LogInfo("Island began loading");
-            // do something
+            Logger.LogInfo("Run Started");
+            _ = SendEventAsync("7", "Run Started", 0, 0);
         }
     }
 
-    // handle players winning
-    [HarmonyPatch(typeof(Flare), nameof(Flare.TriggerHelicopter))]
-    public static class FlarePatch
+    // handle game ending
+    [HarmonyPatch(typeof(GlobalEvents), "TriggerRunEnded")]
+    private static class RunEndedPatch
     {
-        [HarmonyPostfix]
-        private static void FlarePatchRPCAPostfix()
+        private static void RunEndedPostfix()
         {
-            Logger.LogInfo("Helicopter triggered");
-            // do something
+            Logger.LogInfo("Run Ended");
+            _ = SendEventAsync("8", "Run Ended", 0, 0);
         }
     }
 
@@ -297,45 +295,58 @@ public class MedalPeakPlugin : BaseUnityPlugin
     // networking functions stripped from the Medal REPO Plugin for convenience and slightly modified
     internal static async Task SendEventAsync(string eventId, string eventName, int duration, int captureDelayMs)
     {
-        if (!clipCausedByScoutmaster)
+        if (duration != 0 && captureDelayMs != 0)
         {
-            if ((Time.time - timeOfLastClip - 5) < 0)
+            if (!clipCausedByScoutmaster)
             {
-                Logger.LogInfo("Event probably overlapping with other event blocked");
-                return;
+                if ((Time.time - timeOfLastClip - 5) < 0)
+                {
+                    Logger.LogInfo("Event probably overlapping with other event blocked");
+                    return;
+                }
+                timeOfLastClip = Time.time;
             }
-            timeOfLastClip = Time.time;
+            else
+            {
+                if ((Time.time - timeOfLastClip - 20) < 0)
+                {
+                    Logger.LogInfo("Event probably caused by scoutmaster throw blocked");
+                    return;
+                }
+                clipCausedByScoutmaster = false; // scoutmaster cooldown has passed
+                timeOfLastClip = Time.time;
+            }
+
+            if (eventId == "4")
+            {
+                clipCausedByScoutmaster = true;
+            }
+
+            var jsonPayload = new
+            {
+                eventId,
+                eventName,
+                triggerActions = new string[1] { "SaveClip" },
+                clipOptions = new
+                {
+                    duration,
+                    captureDelayMs,
+                    alertType = "Disabled",
+                }
+            };
+            StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
+            _ = await httpClient.PostAsync("http://localhost:12665/api/v1/event/invoke", content);
         }
         else
         {
-            if ((Time.time - timeOfLastClip - 20) < 0)
+            var jsonPayload = new
             {
-                Logger.LogInfo("Event probably caused by scoutmaster throw blocked");
-                return;
-            }
-            clipCausedByScoutmaster = false; // scoutmaster cooldown has passed
-            timeOfLastClip = Time.time;
+                eventId,
+                eventName,
+            };
+            StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
+            _ = await httpClient.PostAsync("http://localhost:12665/api/v1/event/invoke", content);
         }
-
-        if (eventId == "4")
-        {
-            clipCausedByScoutmaster = true;
-        }
-
-        var jsonPayload = new
-        {
-            eventId,
-            eventName,
-            triggerActions = new string[1] { "SaveClip" },
-            clipOptions = new
-            {
-                duration,
-                captureDelayMs,
-                alertType = "Disabled",
-            }
-        };
-        StringContent? content = new StringContent(JsonConvert.SerializeObject(jsonPayload), Encoding.UTF8, "application/json");
-        _ = await httpClient.PostAsync("http://localhost:12665/api/v1/event/invoke", content);
     }
 
     internal static async Task SendContextAsync(PlayerModel localPlayer, string lobbyId, List<PlayerModel> otherPlayers)
