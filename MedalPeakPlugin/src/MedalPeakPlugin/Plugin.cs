@@ -135,6 +135,34 @@ public class MedalPeakPlugin : BaseUnityPlugin
         }
     }
 
+    // handle player being revived
+    [HarmonyPatch(typeof(Character), nameof(Character.RPCA_Revive))]
+    public static class CharacterRevivePatch
+    {
+        [HarmonyPostfix]
+        private static void CharacterReviveRPCAPostfix(Character __instance)
+        {
+            if (__instance != Character.localCharacter) return;
+
+            Logger.LogInfo("Player got revived");
+            // do something
+        }
+    }
+
+    // handle player un-passing out
+    [HarmonyPatch(typeof(Character), nameof(Character.RPCA_UnPassOut))]
+    public static class CharacterAwakePatch
+    {
+        [HarmonyPostfix]
+        private static void CharacterAwakeRPCAPostfix(Character __instance)
+        {
+            if (__instance != Character.localCharacter) return;
+
+            Logger.LogInfo("Player woke up from being passed out");
+            // do something
+        }
+    }
+
     // handle instant player death (ex from an item that kills you with no chance for revive)
     [HarmonyPatch(typeof(Character), "DieInstantly")]
     [HarmonyPostfix]
@@ -209,6 +237,20 @@ public class MedalPeakPlugin : BaseUnityPlugin
 
             Logger.LogInfo("Player flung by scoutmaster");
             _ = SendEventAsync("4", "Thrown By Scoutmaster", 60, 15000);
+        }
+    }
+
+    // handle player being jumped by a antlion
+    [HarmonyPatch(typeof(Antlion), nameof(Antlion.RPCA_Attack))]
+    public static class AntlionPatch
+    {
+        [HarmonyPostfix]
+        private static void AntlionPatchPostfix(Antlion __instance)
+        {
+            if (__instance.closestTarget != Character.localCharacter) { return; }
+
+            Logger.LogInfo("Player attacked by antlion");
+            _ = SendEventAsync("5", "Attacked By Antlion", 30, 10000);
         }
     }
 
