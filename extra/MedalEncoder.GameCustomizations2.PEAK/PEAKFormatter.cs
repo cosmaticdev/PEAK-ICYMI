@@ -24,6 +24,26 @@ internal class PEAKFormatter
     {
       "Thrown By Scoutmaster",
       "\ud83e\udd38Thrown By Scoutmaster"
+    },
+    {
+      "Attacked By Antlion",
+      "\uD83D\uDCA5Attacked By Antlion"
+    },
+    {
+      "Revived",
+      "\uD83D\uDC9ARevived"
+    },
+    {
+      "Woke Up",
+      "\uD83E\uDD71Woke Up"
+    },
+    {
+      "Run Ended",
+      "\uD83D\uDD90Run Ended"
+    },
+    {
+      "Called Helicopter",
+      "\uD83D\uDE81Called Helicopter"
     }
   };
   private static IReadOnlyDictionary<string, List<(string, string)>> TagMap = (IReadOnlyDictionary<string, List<(string, string)>>) new Dictionary<string, List<(string, string)>>()
@@ -43,20 +63,60 @@ internal class PEAKFormatter
     {
       "Thrown By Scoutmaster",
       new List<(string, string)>() { ("Event ID", "4") }
+    },
+    {
+      "Attacked By Antlion",
+      new List<(string, string)>() { ("Event ID", "5") }
+    },
+    {
+      "Revived",
+      new List<(string, string)>() { ("Event ID", "6") }
+    },
+    {
+      "Woke Up",
+      new List<(string, string)>() { ("Event ID", "7") }
+    },
+    {
+      "Run Ended",
+      new List<(string, string)>() { ("Event ID", "8") }
+    },
+    {
+      "Called Helicopter",
+      new List<(string, string)>() { ("Event ID", "9") }
     }
   };
   private static IReadOnlyDictionary<string, int> PriorityMap = (IReadOnlyDictionary<string, int>) new Dictionary<string, int>()
   {
     {
+      "Called Helicopter",
+      900
+    },
+    {
+      "Run Ended",
+      800
+    },
+    {
       "Died Instantly",
-      400
+      700
+    },
+    {
+      "Revived",
+      600
+    },
+    {
+      "Woke Up",
+      500
     },
     {
       "Passed Out",
-      300
+      400
     },
     {
       "Thrown By Scoutmaster",
+      300
+    },
+    {
+      "Attacked By Antlion",
       200
     },
     {
